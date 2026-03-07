@@ -1,20 +1,10 @@
-/**
- * tests/auth.test.js
- *
- * Tests for authentication endpoints:
- *   POST /api/auth/register
- *   POST /api/auth/login
- */
-
 import request from 'supertest';
 import { buildTestApp, clearStores } from './setup.js';
 
 const app = buildTestApp();
 
-// Reset in-memory stores before each test to ensure isolation
 beforeEach(() => clearStores());
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('POST /api/auth/register', () => {
   it('should register a new user and return user data without the password', async () => {
     const res = await request(app).post('/api/auth/register').send({
@@ -57,9 +47,7 @@ describe('POST /api/auth/register', () => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('POST /api/auth/login', () => {
-  // Register a user before each login test
   beforeEach(async () => {
     await request(app).post('/api/auth/register').send({
       name: 'Bob',

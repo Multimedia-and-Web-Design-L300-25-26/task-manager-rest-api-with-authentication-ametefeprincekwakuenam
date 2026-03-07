@@ -1,11 +1,3 @@
-/**
- * tests/setup.js
- *
- * Shared in-memory fake implementations of User and Task models
- * plus a factory that builds a fully wired Express test app.
- * No real MongoDB connection is required to run tests.
- */
-
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -14,7 +6,6 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.test' });
 
-// ── In-memory data stores ─────────────────────────────────────────────────────
 export const userStore = new Map();
 export const taskStore = new Map();
 
@@ -23,7 +14,6 @@ export const clearStores = () => {
   taskStore.clear();
 };
 
-// ── Fake User model ───────────────────────────────────────────────────────────
 export const UserFake = {
   async findOne({ email }) {
     for (const u of userStore.values()) {
@@ -65,7 +55,6 @@ export const UserFake = {
   },
 };
 
-// ── Fake Task model ───────────────────────────────────────────────────────────
 export const TaskFake = {
   async find({ user }) {
     const results = [];
@@ -86,13 +75,18 @@ export const TaskFake = {
       throw err;
     }
     const _id = new mongoose.Types.ObjectId();
-    const task = { _id, title, description: description || '', completed: completed || false, user };
+    const task = {
+      _id,
+      title,
+      description: description || '',
+      completed: completed || false,
+      user,
+    };
     taskStore.set(String(_id), task);
     return { ...task };
   },
 };
 
-// ── Auth middleware factory ───────────────────────────────────────────────────
 export const makeProtect = (User) => async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -112,7 +106,6 @@ export const makeProtect = (User) => async (req, res, next) => {
 export const genToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-// ── Build a fully wired Express test app ─────────────────────────────────────
 export const buildTestApp = () => {
   const app = express();
   app.use(express.json());
@@ -124,9 +117,15 @@ export const buildTestApp = () => {
       if (!name || !email || !password)
         return res.status(400).json({ message: 'Please provide name, email, and password' });
       const user = await UserFake.create({ name, email, password });
-      return res.status(201).json({ _id: user._id, name: user.name, email: user.email, token: genToken(user._id) });
+      return res.status(201).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        token: genToken(user._id),
+      });
     } catch (err) {
-      if (err.code === 11000) return res.status(400).json({ message: 'Email already in use' });
+      if (err.code === 11000)
+        return res.status(400).json({ message: 'Email already in use' });
       return res.status(500).json({ message: 'Server error', error: err.message });
     }
   });
@@ -140,7 +139,12 @@ export const buildTestApp = () => {
       if (!user) return res.status(401).json({ message: 'Invalid credentials' });
       const match = await user.comparePassword(password);
       if (!match) return res.status(401).json({ message: 'Invalid credentials' });
-      return res.status(200).json({ _id: user._id, name: user.name, email: user.email, token: genToken(user._id) });
+      return res.status(200).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        token: genToken(user._id),
+      });
     } catch (err) {
       return res.status(500).json({ message: 'Server error', error: err.message });
     }
@@ -150,7 +154,12 @@ export const buildTestApp = () => {
     try {
       const { title, description, completed } = req.body;
       if (!title) return res.status(400).json({ message: 'Title is required' });
-      const task = await TaskFake.create({ title, description, completed, user: req.user._id });
+      const task = await TaskFake.create({
+        title,
+        description,
+        completed,
+        user: req.user._id,
+      });
       return res.status(201).json(task);
     } catch (err) {
       return res.status(500).json({ message: 'Server error', error: err.message });

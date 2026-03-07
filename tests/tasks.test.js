@@ -1,23 +1,12 @@
-/**
- * tests/tasks.test.js
- *
- * Tests for protected task endpoints:
- *   POST   /api/tasks
- *   GET    /api/tasks
- *   DELETE /api/tasks/:id
- */
-
 import request from 'supertest';
 import mongoose from 'mongoose';
 import { buildTestApp, clearStores } from './setup.js';
 
 const app = buildTestApp();
 
-// ── Shared state ──────────────────────────────────────────────────────────────
 let tokenUser1;
 let tokenUser2;
 
-// Register two users fresh before each test
 beforeEach(async () => {
   clearStores();
 
@@ -36,7 +25,6 @@ beforeEach(async () => {
   tokenUser2 = r2.body.token;
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('POST /api/tasks', () => {
   it('should create a task for the authenticated user', async () => {
     const res = await request(app)
@@ -68,10 +56,8 @@ describe('POST /api/tasks', () => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('GET /api/tasks', () => {
   it('should return only tasks belonging to the authenticated user', async () => {
-    // User 1 creates two tasks
     await request(app)
       .post('/api/tasks')
       .set('Authorization', `Bearer ${tokenUser1}`)
@@ -82,13 +68,11 @@ describe('GET /api/tasks', () => {
       .set('Authorization', `Bearer ${tokenUser1}`)
       .send({ title: 'Task Beta' });
 
-    // User 2 creates one task
     await request(app)
       .post('/api/tasks')
       .set('Authorization', `Bearer ${tokenUser2}`)
       .send({ title: 'Task Gamma' });
 
-    // User 1 fetches their tasks
     const res = await request(app)
       .get('/api/tasks')
       .set('Authorization', `Bearer ${tokenUser1}`);
@@ -108,7 +92,6 @@ describe('GET /api/tasks', () => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
 describe('DELETE /api/tasks/:id', () => {
   it('should delete a task owned by the authenticated user', async () => {
     const create = await request(app)
